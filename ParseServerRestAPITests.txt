@@ -1,8 +1,0 @@
-EXAMPLE:
-curl -X POST -H "X-Parse-Application-Id: cEpg8HAH75eVLcqfp9VfbQIdUJ1lz7XVMwrZ5EYc" -H "Content-Type: application/json" -d '{"score":1337,"playerName":"Sean Plott","cheatMode":false}' http://localhost:1337/parse/classes/Photo
-
-Event:
-curl -X POST -H "X-Parse-Application-Id: cEpg8HAH75eVLcqfp9VfbQIdUJ1lz7XVMwrZ5EYc" -H "Content-Type: application/json" -d '{"name":"YIIII","createdBy":"susy","location":"bootie","description":"nope"}' http://localhost:1337/parse/classes/Event
-
-File EXAMPLE:
-curl -X POST -H "X-Parse-Application-Id: YOUR_APP_ID" -H "Content-Type: image/jpeg" --data-binary '@myPicture.jpg' http://localhost:1337/parse/files/pic.jpg
