@@ -22,7 +22,8 @@ var api = new ParseServer({
   filesAdapter: new S3Adapter(
     process.env.AWS_ACCESS_KEY_ID,
     process.env.AWS_SECRET_ACCESS_KEY,
-    process.env.BUCKET_NAME
+    process.env.BUCKET_NAME,
+    {directAccess: true}
   )
   // liveQuery: {
   //   classNames: ["Posts", "Comments"] // List of classes to support for query subscriptions
