@@ -30,7 +30,7 @@ var api = new ParseServer({
       pfx: process.env.APS_PRODUCTION_CERT_PATH, // the path and filename to the .p12 file you exported earlier.
       passphrase: process.env.APS_PRODUCTION_CERT_PASSPHRASE,
       bundleId: process.env.APS_APP_BUNDLE_ID, // The bundle identifier associated with your app
-      // production: true // false // Specifies which environment to connect to: Production (if true) or Sandbox
+      production: false // Specifies which environment to connect to: Production (if true) or Sandbox
     }
   }
   // liveQuery: {
