@@ -20,7 +20,7 @@ Parse.Cloud.define('approveUser', function(request, response) {
   approvejs.approveUser(creatingUser, name, email, username, tempPass, response);
 });
 
-const NEXT_PUSH_DELAY = 15;
+const NEXT_PUSH_DELAY = 15; // minutes
 var sendNextPushAt = new Date();
 
 /**
