@@ -5,6 +5,9 @@ Parse.Cloud.define('hello', function(req, res) {
 });
 */
 
+/**
+ * Approve user.
+ */
 Parse.Cloud.define('approveUser', function(request, response) {
   var creatingUser = request.user;
 
@@ -17,15 +20,19 @@ Parse.Cloud.define('approveUser', function(request, response) {
   approvejs.approveUser(creatingUser, name, email, username, tempPass, response);
 });
 
-var 
+const NEXT_PUSH_DELAY = 15;
 var sendNextPushAt = new Date();
 
+/**
+ * Chat push.
+ */
 Parse.Cloud.afterSave('message', function(request) {
   var sentAt = new Date(request.object.get('createdAt'));
   console.log("SENT AT", sentAt);
   console.log("NEXT PUSH AT", sendNextPushAt);
 
   var pushQuery = new Parse.Query(Parse.Installation);
+  pushQuery.notEqualTo('user', request.user);
   var author = request.object.get('authorUsername');
   var content = request.object.get('content');
   console.log("AUTHOR", author);
@@ -33,17 +40,20 @@ Parse.Cloud.afterSave('message', function(request) {
 
   if (sentAt > sendNextPushAt) {
     sendNextPushAt = sentAt;
-    sendNextPushAt.setMinutes(sentAt.getMinutes() + 2);
+    sendNextPushAt.setMinutes(sentAt.getMinutes() + NEXT_PUSH_DELAY);
 
     Parse.Push.send({
       where: pushQuery,
       data: {
-        badge: 'Increment',
-        alert: {
-          title: 'Delts are chatting...',
-          body: author + ': ' + content
-        },
-        sound: 'default'
+        aps: {
+          pushType: 'Chat',
+          badge: 'Increment',
+          alert: {
+            title: 'Delts are chatting...',
+            body: author + ': ' + content
+          },
+          sound: 'default'
+        }
       }
     }, {
       useMasterKey: true,
@@ -59,8 +69,11 @@ Parse.Cloud.afterSave('message', function(request) {
     Parse.Push.send({
       where: pushQuery,
       data: {
-        badge: 'Increment',
-        'content-available': 0
+        aps: {
+          pushType: 'Chat',
+          badge: 'Increment',
+          'content-available': 0
+        }
       }
     }, {
       useMasterKey: true,
@@ -72,4 +85,83 @@ Parse.Cloud.afterSave('message', function(request) {
       }
     });
   }
+});
+
+/**
+ * Reel push.
+ */
+Parse.Cloud.afterSave('Photo', function(request) {
+  var pushQuery = new Parse.Query(Parse.Installation);
+  pushQuery.notEqualTo('user', request.user);
+  var author = request.object.get('username');
+
+  Parse.Push.send({
+    where: pushQuery,
+    data: {
+      aps: {
+        pushType: 'Reel',
+        badge: 'Increment',
+        alert: {
+          body: author + ' posted a new photo.'
+        },
+        sound: 'default'
+      }
+    }
+  }, {
+    useMasterKey: true,
+    success: function () {
+      console.log('SUCCESSFUL REEL PUSH SENT AT', new Date());
+    },
+    error: function (error) {
+      throw 'REEL PUSH ERROR: ' + error.code + ' : ' + error.message;
+    }
+  });
+});
+
+/**
+ * Calendar push.
+ */
+Parse.Cloud.afterSave('Event', function(request) {
+  var pushQuery = new Parse.Query(Parse.Installation);
+  pushQuery.notEqualTo('user', request.user);
+
+  var pushTitle = 'New event';
+  var author = request.object.get('createdBy');
+  if (author) {
+    pushTitle = author + ' added a new event.';
+  }
+
+  var pushBody = '';
+  pushBody += request.object.get('name'); // Event title.
+  var date = new Date(new Date(request.object.get('startTime')));
+  if (date) {
+    pushBody += ' ' + date.format('m/dd H:MM');
+  }
+  var description = request.object.get('description');
+  if (description) {
+    pushBody += '\n' + description;
+  }
+
+  Parse.Push.send({
+    where: pushQuery,
+    data: {
+      aps: {
+        pushType: 'Calendar',
+        badge: 'Increment',
+        alert: {
+          title: pushTitle,
+          body: pushBody
+        },
+        sound: 'default'
+      }
+    }
+  }, {
+    useMasterKey: true,
+    success: function () {
+      console.log('SUCCESSFUL CALENDAR PUSH SENT AT', new Date());
+    },
+    error: function (error) {
+      throw 'CALENDAR PUSH ERROR: ' + error.code + ' : ' + error.message;
+    }
+  });
 });
