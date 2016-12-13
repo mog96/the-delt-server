@@ -125,18 +125,26 @@ Parse.Cloud.afterSave('Event', function(request) {
   var pushQuery = new Parse.Query(Parse.Installation);
   pushQuery.notEqualTo('user', request.user);
 
-  var pushTitle = 'New event';
-  var author = request.object.get('createdBy');
-  if (author) {
-    pushTitle = author + ' added a new event.';
+  var pushTitle = 'New event: ';
+  // var author = request.object.get('createdBy');
+  // if (author) {
+  //   pushTitle = author + ' added a new event:';
+  // }
+
+
+  pushTitle += request.object.get('name'); // Event title.
+
+  var date = new Date(request.object.get('startTime'));
+  console.log('NOW', new Date());
+  console.log('DATE', date);
+  var dateFormatter = require('../cloud/dateformat.js');
+  var pushBody = dateFormatter.formatDate(date, 'dddd m/dd h:MMt');
+
+  var location = request.object.get('location');
+  if (location) {
+    pushBody += ' @ ' + location;
   }
 
-  var pushBody = '';
-  pushBody += request.object.get('name'); // Event title.
-  var date = new Date(new Date(request.object.get('startTime')));
-  if (date) {
-    pushBody += ' ' + date.format('m/dd H:MM');
-  }
   var description = request.object.get('description');
   if (description) {
     pushBody += '\n' + description;
