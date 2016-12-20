@@ -33,14 +33,15 @@ Parse.Cloud.afterSave('message', function(request) {
 
   var pushQuery = new Parse.Query(Parse.Installation);
   pushQuery.notEqualTo('user', request.user);
-  var author = request.object.get('authorUsername');
-  var content = request.object.get('content');
-  console.log("AUTHOR", author);
-  console.log("MESSAGE", content);
 
   if (sentAt > sendNextPushAt) {
     sendNextPushAt = sentAt;
     sendNextPushAt.setMinutes(sentAt.getMinutes() + NEXT_PUSH_DELAY);
+
+    var author = request.object.get('authorUsername');
+    var content = request.object.get('content');
+    console.log("AUTHOR", author);
+    console.log("MESSAGE", content);
 
     Parse.Push.send({
       where: pushQuery,
