@@ -24,7 +24,73 @@ const NEXT_PUSH_DELAY = 15; // minutes
 var sendNextPushAt = new Date();
 
 /**
- * Chat push.
+ * Reel Push - New Post
+ */
+Parse.Cloud.afterSave('Photo', function(request) {
+  var pushQuery = new Parse.Query(Parse.Installation);
+  pushQuery.notEqualTo('user', request.user);
+  var author = request.object.get('username');
+
+  Parse.Push.send({
+    where: pushQuery,
+    data: {
+      aps: {
+        pushType: 'Reel',
+        badge: 'Increment',
+        alert: {
+          body: author + ' posted a new photo.'
+        },
+        sound: 'default'
+      }
+    }
+  }, {
+    useMasterKey: true,
+    success: function () {
+      console.log('SUCCESSFUL REEL PUSH SENT AT', new Date());
+    },
+    error: function (error) {
+      throw 'REEL PUSH ERROR: ' + error.code + ' : ' + error.message;
+    }
+  });
+});
+
+/**
+ * Alert Push - New Alert
+ */
+Parse.Cloud.afterSave('Alert', function(request) {
+  var pushQuery = new Parse.Query(Parse.Installation);
+  pushQuery.notEqualTo('user', request.user);
+
+  var authorUsername = request.object.get('user').get('username');
+  var subject = request.object.get('subject');
+  var message = request.object.get('message');
+
+  Parse.Push.send({
+    where: pushQuery,
+    data: {
+      aps: {
+        pushType: 'Alert',
+        badge: 'Increment',
+        alert: {
+          title: 'Alert from ' + authorUsername + ': ' + subject,
+          body: message
+        },
+        sound: 'default'
+      }
+    }
+  }, {
+    useMasterKey: true,
+    success: function () {
+      console.log('SUCCESSFUL ALERT PUSH SENT AT', new Date());
+    },
+    error: function (error) {
+      throw 'ALERT PUSH ERROR: ' + error.code + ' : ' + error.message;
+    }
+  });
+});
+
+/**
+ * Chat Push - New Message
  */
 Parse.Cloud.afterSave('message', function(request) {
   var sentAt = new Date(request.object.get('createdAt'));
@@ -89,38 +155,7 @@ Parse.Cloud.afterSave('message', function(request) {
 });
 
 /**
- * Reel push.
- */
-Parse.Cloud.afterSave('Photo', function(request) {
-  var pushQuery = new Parse.Query(Parse.Installation);
-  pushQuery.notEqualTo('user', request.user);
-  var author = request.object.get('username');
-
-  Parse.Push.send({
-    where: pushQuery,
-    data: {
-      aps: {
-        pushType: 'Reel',
-        badge: 'Increment',
-        alert: {
-          body: author + ' posted a new photo.'
-        },
-        sound: 'default'
-      }
-    }
-  }, {
-    useMasterKey: true,
-    success: function () {
-      console.log('SUCCESSFUL REEL PUSH SENT AT', new Date());
-    },
-    error: function (error) {
-      throw 'REEL PUSH ERROR: ' + error.code + ' : ' + error.message;
-    }
-  });
-});
-
-/**
- * Calendar push.
+ * Calendar Push - New Event
  */
 Parse.Cloud.afterSave('Event', function(request) {
   var pushQuery = new Parse.Query(Parse.Installation);
