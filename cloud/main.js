@@ -61,7 +61,7 @@ Parse.Cloud.afterSave('Alert', function(request) {
   var pushQuery = new Parse.Query(Parse.Installation);
   pushQuery.notEqualTo('user', request.user);
 
-  var authorUsername = request.user.username;
+  var authorUsername = request.user.get('username');
   var subject = request.object.get('subject');
   var message = request.object.get('message');
   console.log('ALERT PUSH TITLE:', 'Alert from ' + authorUsername + ': ' + subject);
