@@ -61,36 +61,31 @@ Parse.Cloud.afterSave('Alert', function(request) {
   var pushQuery = new Parse.Query(Parse.Installation);
   pushQuery.notEqualTo('user', request.user);
 
-  var author = new Parse.User(request.object.get('user'));
-  author.fetch().then(function(fetchedUser){
-    var authorUsername = fetchedUser.getUsername();
-    var subject = request.object.get('subject');
-    var message = request.object.get('message');
+  var authorUsername = request.user.username;
+  var subject = request.object.get('subject');
+  var message = request.object.get('message');
 
-    Parse.Push.send({
-      where: pushQuery,
-      data: {
-        aps: {
-          pushType: 'Alert',
-          badge: 'Increment',
-          alert: {
-            title: 'Alert from ' + authorUsername + ': ' + subject,
-            body: message
-          },
-          sound: 'default'
-        }
+  Parse.Push.send({
+    where: pushQuery,
+    data: {
+      aps: {
+        pushType: 'Alert',
+        badge: 'Increment',
+        alert: {
+          title: 'Alert from ' + authorUsername + ': ' + subject,
+          body: message
+        },
+        sound: 'default'
       }
-    }, {
-      useMasterKey: true,
-      success: function () {
-        console.log('SUCCESSFUL ALERT PUSH SENT AT', new Date());
-      },
-      error: function (error) {
-        throw 'ALERT PUSH ERROR: ' + error.code + ' : ' + error.message;
-      }
-    });
-  }, function(error){
-    console.log('Unable to fetch user for alert', request.object, ':', error);
+    }
+  }, {
+    useMasterKey: true,
+    success: function () {
+      console.log('SUCCESSFUL ALERT PUSH SENT AT', new Date());
+    },
+    error: function (error) {
+      throw 'ALERT PUSH ERROR: ' + error.code + ' : ' + error.message;
+    }
   });
 });
 
