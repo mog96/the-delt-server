@@ -65,16 +65,14 @@ Parse.Cloud.afterSave('Alert', function(request) {
   var subject = request.object.get('subject');
   var message = request.object.get('message');
 
-  console.log('ALERT PUSH:');
-  console.log('TITLE:', 'Alert from ' + authorUsername + ': ' + subject);
-  console.log('MESSAGE:', message);
-
   var alertObj = {
     title: 'Alert from ' + authorUsername + ': ' + subject
   };
   if (message) {
     alertObj['body'] = message;
   }
+
+  console.log('ALERT PUSH:', alertObj);
 
   Parse.Push.send({
     where: pushQuery,
