@@ -71,7 +71,7 @@ Parse.Cloud.afterSave('Alert', function(request) {
     alertObj['title'] = alertTitle;
     alertObj['body'] = message;
   } else {
-    alertObj['message'] = alertTitle;
+    alertObj['body'] = alertTitle;
   }
 
   console.log('ALERT PUSH:', alertObj);
