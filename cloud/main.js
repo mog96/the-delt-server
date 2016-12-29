@@ -61,7 +61,7 @@ Parse.Cloud.afterSave('Alert', function(request) {
   var pushQuery = new Parse.Query(Parse.Installation);
   pushQuery.notEqualTo('user', request.user);
 
-  var author = request.object.get('user');
+  var author = Parse.User(request.object.get('user'));
   author.fetch().then(function(fetchedUser){
     var authorUsername = fetchedUser.getUsername();
     var subject = request.object.get('subject');
