@@ -27,6 +27,10 @@ var sendNextPushAt = new Date();
  * Reel Push - New Post
  */
 Parse.Cloud.afterSave('Photo', function(request) {
+  if (request.object.existed()) {
+    return;
+  }
+
   var pushQuery = new Parse.Query(Parse.Installation);
   pushQuery.notEqualTo('user', request.user);
   var author = request.object.get('username');
@@ -59,6 +63,10 @@ Parse.Cloud.afterSave('Photo', function(request) {
  */
 Parse.Cloud.afterSave('Alert', function(request) {
   // TODO: CHECK ALERT'S INCONVERSATION PARAM
+  if (request.object.existed()) {
+    return;
+  }
+
   var pushQuery = new Parse.Query(Parse.Installation);
   // Don't exclude user that sent request because we want to reload alerts feed.
 
@@ -107,6 +115,10 @@ Parse.Cloud.afterSave('Alert', function(request) {
  * Alert Push - New Reply
  */
 Parse.Cloud.afterSave('AlertReply', function(request) {
+  if (request.object.existed()) {
+    return;
+  }
+
   var replyToAlert = request.object.get('alert');
   replyToAlert.fetch().then(function(fetchedAlert) {
     console.log('ALERT:', fetchedAlert);
@@ -189,6 +201,10 @@ Parse.Cloud.afterSave('AlertReply', function(request) {
  * Chat Push - New Message
  */
 Parse.Cloud.afterSave('message', function(request) {
+  if (request.object.existed()) {
+    return;
+  }
+
   var sentAt = new Date(request.object.get('createdAt'));
   console.log("SENT AT", sentAt);
   console.log("NEXT PUSH AT", sendNextPushAt);
@@ -254,6 +270,10 @@ Parse.Cloud.afterSave('message', function(request) {
  * Calendar Push - New Event
  */
 Parse.Cloud.afterSave('Event', function(request) {
+  if (request.object.existed()) {
+    return;
+  }
+
   var pushQuery = new Parse.Query(Parse.Installation);
   pushQuery.notEqualTo('user', request.user);
 
