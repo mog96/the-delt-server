@@ -71,43 +71,45 @@ Parse.Cloud.afterSave('Alert', function(request) {
   // Don't exclude user that sent request because we want to reload alerts feed.
 
   var author = request.object.get('author');
-  var authorUsername = author.get('username');
-  var subject = request.object.get('subject');
-  if (!subject) {
-    subject = '[no subject]';
-  }
-  var message = request.object.get('message');
+  author.fetch().then(function(fetchedAuthor) {
+    var authorUsername = fetchedAuthor.get('username');
+    var subject = request.object.get('subject');
+    if (!subject) {
+      subject = '[no subject]';
+    }
+    var message = request.object.get('message');
 
-  var alertObj = {
-    title: 'Alert from ' + authorUsername + ':'
-  };
-  if (message) {
-    alertObj['title'] += ' ' + subject;
-    alertObj['body'] = message;
-  } else {
-    alertObj['body'] = subject;
-  }
+    var alertObj = {
+      title: 'Alert from ' + authorUsername + ':'
+    };
+    if (message) {
+      alertObj['title'] += ' ' + subject;
+      alertObj['body'] = message;
+    } else {
+      alertObj['body'] = subject;
+    }
 
-  console.log('ALERT PUSH:', alertObj);
+    console.log('ALERT PUSH:', alertObj);
 
-  Parse.Push.send({
-    where: pushQuery,
-    data: {
-      aps: {
-        pushType: 'Alert',
-        badge: 'Increment',
-        alert: alertObj,
-        sound: 'default'
+    Parse.Push.send({
+      where: pushQuery,
+      data: {
+        aps: {
+          pushType: 'Alert',
+          badge: 'Increment',
+          alert: alertObj,
+          sound: 'default'
+        }
       }
-    }
-  }, {
-    useMasterKey: true,
-    success: function () {
-      console.log('SUCCESSFUL ALERT PUSH SENT AT', new Date());
-    },
-    error: function (error) {
-      throw 'ALERT PUSH ERROR: ' + error.code + ' : ' + error.message;
-    }
+    }, {
+      useMasterKey: true,
+      success: function () {
+        console.log('SUCCESSFUL ALERT PUSH SENT AT', new Date());
+      },
+      error: function (error) {
+        throw 'ALERT PUSH ERROR: ' + error.code + ' : ' + error.message;
+      }
+    });
   });
 });
 
