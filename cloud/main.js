@@ -1,9 +1,16 @@
 var twttrtxt = require('twitter-text');
+
+
+
+
 /*
 Parse.Cloud.define('hello', function(req, res) {
     res.success('Hi');
 });
 */
+
+
+
 
 /**
  * Approve user.
@@ -22,6 +29,9 @@ Parse.Cloud.define('approveUser', function(request, response) {
 
 const NEXT_PUSH_DELAY = 15; // minutes
 var sendNextPushAt = new Date();
+
+
+
 
 /**
  * Reel Push - New Post
@@ -58,6 +68,9 @@ Parse.Cloud.afterSave('Photo', function(request) {
   });
 });
 
+
+
+
 /**
  * Alert Push - New Alert
  */
@@ -79,7 +92,9 @@ Parse.Cloud.afterSave('Alert', function(request) {
     if (message) {
       usernames.concat(twttrtxt.extractMentions(message));
     }
-    fetchedAlert.set('inConversation', usernames);
+    fetchedAlert.set('inConversation', usernames.map(function(username) {
+      return username.toLowerCase();
+    }));
     fetchedAlert.save().then(function(updatedAlert) {
 
       console.log('ALERT WITH USERNAMES:', updatedAlert.get('inConversation'));
@@ -130,123 +145,108 @@ Parse.Cloud.afterSave('Alert', function(request) {
   });
 });
 
+
+
+
 /**
  * Alert - New Reply
  */
 Parse.Cloud.afterSave('AlertReply', function(request) {
-  /*
-   * Associate reply with alert.
-   */
-  var replyToAlert = request.object.get('alert');
-  replyToAlert.fetch().then(function(fetchedAlert) {
+  if (request.object.existed()) {
+    return;
+  }
 
-    console.log('ALERT:', fetchedAlert);
-
-    var alertQuery = new Parse.Query('Alert');
-    alertQuery.equalTo('objectId', fetchedAlert.id);
-
-    console.log('ID:', fetchedAlert.id);
-
-    return alertQuery.find();
-    // return Parse.Promise.error({ "message": "No Games Found!", "code": 108 });
-  }).then(function(results) {
-
-    console.log('RESULTS:', results);
-
-    if (results.length == 1) {
-      var alert = results[0];
-      // Add reply to Alert.
-      alert.add('replies', request.object);
-      // Increment reply count.
-      alert.increment('replyCount');
-      return alert.save();
-    } else {
-      response.error('None or multiple internal objects for Alert with objectId ', fetchedAlert.objectId);
-    }
-  }).then(function(updatedAlert) {
-
-    console.log('UPDATED ALERT: ', updatedAlert);
-
-  }, function(error) {
-    console.log('Error updating alert for reply ', request.object, '. ', error);
-  });
-
-  // Find library to help with reading @user tags.
-  // Only notify users involved in the conversation:
-  //    - alert author
-  //    - people who have replied and been tagged.
-  // Should add 'inConversation' field to alert object
-
-  /*
-   * Append new usernames to those in alert conversation.
-   */
-  /*
-  var subject = request.object.get('subject');
   var message = request.object.get('message');
-  var usernames = [];
-  if (subject) {
-    usernames = twttrtxt.extractMentions(message);
-  }
-  if (message) {
-    usernames.concat(twttrtxt.extractMentions(message));
-  }
+  var author = request.object.get('author');
+  author.fetch().then(function(fetchedAuthor) {
+    var authorUsername = fetchedAuthor.get('username');
 
-  var alreadyHave = ['dookie', 'lambo', 'ferrari'];
-  console.log('ALREADY HAVE:', alreadyHave);
-  usernames.map(function (elem) {
-    if (!(elem.toLowerCase() in alreadyHave)) {
-      alreadyHave.push(elem);
-    }
-  });
-  console.log('USERNAMES IN ALERT MESSAGE:', usernames);
-  console.log('ALREADY HAVE AFTER:', alreadyHave);
-  */
+    /*
+     * Associate reply with alert.
+     */
+    var replyToAlert = request.object.get('alert');
+    replyToAlert.fetch().then(function(fetchedAlert) {
 
+      console.log('ALERT:', fetchedAlert);
 
-  /*
-  var pushQuery = new Parse.Query(Parse.Installation);
-  pushQuery.notEqualTo('user', request.user);
+      var alertQuery = new Parse.Query('Alert');
+      alertQuery.equalTo('objectId', fetchedAlert.id);
 
-  var authorUsername = request.user.get('username');
-  var subject = request.object.get('subject');
-  if (!subject) {
-    subject = '[no subject]';
-  }
-  var message = request.object.get('message');
+      console.log('ID:', fetchedAlert.id);
 
-  var alertObj = {
-    title: 'Alert from ' + authorUsername + ':'
-  };
-  if (message) {
-    alertObj['title'] += ' ' + subject;
-    alertObj['body'] = message;
-  } else {
-    alertObj['body'] = subject;
-  }
+      return alertQuery.find();
+      // return Parse.Promise.error({ "message": "No Games Found!", "code": 108 });
+    }).then(function(results) {
 
-  console.log('ALERT PUSH:', alertObj);
+      console.log('RESULTS:', results);
 
-  Parse.Push.send({
-    where: pushQuery,
-    data: {
-      aps: {
-        pushType: 'Alert',
-        badge: 'Increment',
-        alert: alertObj,
-        sound: 'default'
+      if (results.length == 1) {
+        var alert = results[0];
+        // Add reply to Alert.
+        alert.add('replies', request.object);
+        // Increment reply count.
+        alert.increment('replyCount');
+
+        /*
+         * Append new mentioned usernames to those in alert conversation.
+         */
+        var message = request.object.get('message');
+        var usernames = twttrtxt.extractMentions(message);
+
+        console.log('USERNAMES IN ALERT MESSAGE:', usernames);
+
+        usernames.map(function (elem) {
+          alert.addUnique('inConversation', elem.toLowerCase());
+        });
+        alert.addUnique('inConversation', authorUsername.toLowerCase());
+
+        console.log('HAVE AFTER:', alert.get('inConversation'));
+
+        return alert.save();
+      } else {
+        response.error('None or multiple internal objects for Alert with objectId ', fetchedAlert.objectId);
       }
-    }
-  }, {
-    useMasterKey: true,
-    success: function () {
-      console.log('SUCCESSFUL ALERT PUSH SENT AT', new Date());
-    },
-    error: function (error) {
-      throw 'ALERT PUSH ERROR: ' + error.code + ' : ' + error.message;
-    }
+    }).then(function(updatedAlert) {
+
+      console.log('UPDATED ALERT: ', updatedAlert);
+
+      var fetchedUsernames = updatedAlert.get('inConversation');
+
+      console.log('ALERT HAS USERNAMES:', fetchedUsernames);
+
+      var pushQuery = new Parse.Query(Parse.Installation);
+      pushQuery.containedIn('username', fetchedUsernames);
+      var alertObj = {
+        title: 'Reply from ' + authorUsername + ':',
+        body: message
+      };
+      Parse.Push.send({
+        where: pushQuery,
+        data: {
+          aps: {
+            pushType: 'Alert',
+            alert: alertObj,
+            sound: 'default'
+          }
+        }
+      }, {
+        useMasterKey: true,
+        success: function () {
+          console.log('SUCCESSFUL REPLY PUSH SENT AT', new Date());
+        },
+        error: function (error) {
+          throw 'REPLY PUSH ERROR: ' + error.code + ' : ' + error.message;
+        }
+      });
+
+    }, function(error) {
+      console.log('Error updating alert for reply ', request.object, '. ', error);
+    });
   });
-  */
 });
+
+
+
 
 /**
  * Chat Push - New Message
