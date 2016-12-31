@@ -112,13 +112,9 @@ Parse.Cloud.afterSave('Alert', function(request) {
 });
 
 /**
- * Alert Push - New Reply
+ * Alert - New Reply
  */
 Parse.Cloud.afterSave('AlertReply', function(request) {
-  if (request.object.existed()) {
-    return;
-  }
-
   var replyToAlert = request.object.get('alert');
   replyToAlert.fetch().then(function(fetchedAlert) {
     console.log('ALERT:', fetchedAlert);
@@ -131,10 +127,10 @@ Parse.Cloud.afterSave('AlertReply', function(request) {
     console.log('RESULTS:', results);
     if (results.length == 1) {
       var alert = results[0];
-      // Increment reply count.
-      alert.increment('replyCount');
       // Add reply to Alert.
       alert.add('replies', request.object);
+      // Increment reply count.
+      alert.increment('replyCount');
       return alert.save();
     } else {
       response.error('None or multiple internal objects for Alert with objectId ', fetchedAlert.objectId);
