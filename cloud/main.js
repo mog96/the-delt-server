@@ -110,6 +110,7 @@ Parse.Cloud.afterSave('Alert', function(request) {
         }
 
         var alertObj = {
+          pushType: 'Alert',
           title: 'Alert from ' + authorUsername + ':'
         };
         if (message) {
@@ -265,14 +266,14 @@ Parse.Cloud.afterSave('message', function(request) {
   var pushQuery = new Parse.Query(Parse.Installation);
   pushQuery.notEqualTo('user', request.user);
 
+  var author = request.object.get('authorUsername');
+  var content = request.object.get('content');
+  console.log("AUTHOR", author);
+  console.log("MESSAGE", content);
+
   if (sentAt > sendNextPushAt) {
     sendNextPushAt = sentAt;
     sendNextPushAt.setMinutes(sentAt.getMinutes() + NEXT_PUSH_DELAY);
-
-    var author = request.object.get('authorUsername');
-    var content = request.object.get('content');
-    console.log("AUTHOR", author);
-    console.log("MESSAGE", content);
 
     Parse.Push.send({
       where: pushQuery,
@@ -304,7 +305,12 @@ Parse.Cloud.afterSave('message', function(request) {
         aps: {
           pushType: 'Chat',
           badge: 'Increment',
-          'content-available': 0
+          sound: 'default',
+          // 'content-available': 1,
+          alert: {
+            title: 'New message from ' + author + ':',
+            body: content
+          }
         }
       }
     }, {
